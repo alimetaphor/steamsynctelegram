@@ -31,8 +31,15 @@ def save_user_data(telegram_id, username, steam_id, display_name, last_data):
     conn.commit()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🎮 سلام رفیق! برای دیدن اطلاعات استیمت، بنویس:
-/steam YourSteamID")
+   await update.message.reply_text(
+    """🎮 سلام رفیق! برای دیدن اطلاعات استیمت، بنویس:
+مثلاً:
+`/steamid YOUR_ID`
+
+یا از آیدی دلخواهت استفاده کن:
+`/steamid gaben`"""
+)
+
 
 def fetch_steam_summary(steam_id):
     r = requests.get(f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={STEAM_API_KEY}&steamids={steam_id}")
