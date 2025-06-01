@@ -49,11 +49,11 @@ def fetch_owned_games(steam_id):
 
 async def steam(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-   await update.message.reply_text("""🧩 لطفاً Steam ID خودت رو وارد کن:
+        await update.message.reply_text("""🧩 لطفاً Steam ID خودت رو وارد کن:
 مثلاً:
 76561197960435530 یا gaben""")
-
         return
+        
     steam_id = context.args[0]
     summary = fetch_steam_summary(steam_id)
     games = fetch_owned_games(steam_id)
@@ -74,8 +74,8 @@ async def steam(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_photo(
         photo=avatar,
-        caption=f"🧑‍🚀 {player_name} on Steam
-🎮 تعداد بازی‌ها: {len(games)}",
+        caption=f"""🧑‍🚀 {player_name} on Steam
+🎮 تعداد بازی‌ها: {len(games)}""",
         reply_markup=reply_markup
     )
 
@@ -89,8 +89,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         top_games = sorted(games, key=lambda x: x.get("playtime_forever", 0), reverse=True)[:5]
         game_lines = [f"🎯 {g['name']} - {round(g['playtime_forever']/60)}h" for g in top_games]
         nickname = "🔥 افسانه‌ی بی‌وقفه" if top_games and top_games[0]["playtime_forever"] > 10000 else "🎲 گیمر معمولی"
-        text = "🎮 ۵ بازی پرکاربرد:
-" + "\n".join(game_lines) + f"\n\nلقب: {nickname}"
+        text = f"""🎮 ۵ بازی پرکاربرد:
+{"\n".join(game_lines)}
+            
+لقب: {nickname}"""
         await query.edit_message_caption(caption=text)
 
 if __name__ == "__main__":
