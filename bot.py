@@ -1,54 +1,94 @@
-import os
-import logging
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-import requests
 
-# توکن‌ها از Environment Variable خونده می‌شن
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+# bot.py - نمونه ساده اولیه با استفاده از دیتابیس و دستور /steam
+
+import logging
+import sqlite3
+import json
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
+import requests
+import os
+from datetime import datetime
+
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 STEAM_API_KEY = os.getenv("STEAM_API_KEY")
 
-# لاگ ساده
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+conn = sqlite3.connect("steamsync_users.db", check_same_thread=False)
+cursor = conn.cursor()
 
-# استارت
+logging.basicConfig(level=logging.INFO)
+
+def save_user_data(telegram_id, username, steam_id, display_name, last_data):
+    cursor.execute("""
+        INSERT INTO users (telegram_id, username, steam_id, display_name, last_seen, last_fetched_data)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(telegram_id) DO UPDATE SET
+            steam_id=excluded.steam_id,
+            display_name=excluded.display_name,
+            last_seen=excluded.last_seen,
+            last_fetched_data=excluded.last_fetched_data
+    """, (telegram_id, username, steam_id, display_name, datetime.utcnow(), json.dumps(last_data)))
+    conn.commit()
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🎮 سلام رفیق! من SteamSyncBot هستم. بگو چیکار کنم؟")
+    await update.message.reply_text("🎮 سلام رفیق! برای دیدن اطلاعات استیمت، بنویس:
+/steam YourSteamID")
 
-# گرفتن پروفایل استیم
+def fetch_steam_summary(steam_id):
+    r = requests.get(f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={STEAM_API_KEY}&steamids={steam_id}")
+    return r.json()["response"]["players"][0]
+
+def fetch_owned_games(steam_id):
+    r = requests.get(f"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={STEAM_API_KEY}&steamid={steam_id}&include_appinfo=1&format=json")
+    return r.json()["response"].get("games", [])
+
 async def steam(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("👀 اول SteamID یا Vanity URL بده بهم.")
+        await update.message.reply_text("🧩 لطفاً Steam ID خودت رو وارد کن:
+/steam YourSteamID")
         return
-
     steam_id = context.args[0]
-    try:
-        r = requests.get(f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={STEAM_API_KEY}&steamids={steam_id}")
-        data = r.json()
-        player = data["response"]["players"][0]
-        username = player["personaname"]
-        profile_url = player["profileurl"]
-        game = player.get("gameextrainfo", "Not in-game")
+    summary = fetch_steam_summary(steam_id)
+    games = fetch_owned_games(steam_id)
+    player_name = summary["personaname"]
+    avatar = summary["avatarfull"]
 
-        msg = f"""🧑‍🚀 نام کاربر: {username}
-🎮 وضعیت: {game}
-🌐 پروفایل: {profile_url}
-        """
-        await update.message.reply_text(msg)
-    except Exception as e:
-        await update.message.reply_text("😕 مشکلی پیش اومد یا SteamID اشتباهه.")
+    # ذخیره اطلاعات در دیتابیس
+    save_user_data(
+        str(update.effective_user.id),
+        update.effective_user.username,
+        steam_id,
+        player_name,
+        {"summary": summary, "games": games}
+    )
 
-# اپلیکیشن رو بساز
-app = ApplicationBuilder().token(BOT_TOKEN).build()
+    keyboard = [[InlineKeyboardButton("اطلاعات بیشتر 🎮", callback_data=f"more_{steam_id}")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-# دستورها رو اضافه کن
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("steam", steam))
+    await update.message.reply_photo(
+        photo=avatar,
+        caption=f"🧑‍🚀 {player_name} on Steam
+🎮 تعداد بازی‌ها: {len(games)}",
+        reply_markup=reply_markup
+    )
 
-# مستقیم بدون asyncio.run اجرا کن
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+    if data.startswith("more_"):
+        steam_id = data.split("_")[1]
+        games = fetch_owned_games(steam_id)
+        top_games = sorted(games, key=lambda x: x.get("playtime_forever", 0), reverse=True)[:5]
+        game_lines = [f"🎯 {g['name']} - {round(g['playtime_forever']/60)}h" for g in top_games]
+        nickname = "🔥 افسانه‌ی بی‌وقفه" if top_games and top_games[0]["playtime_forever"] > 10000 else "🎲 گیمر معمولی"
+        text = "🎮 ۵ بازی پرکاربرد:
+" + "\n".join(game_lines) + f"\n\nلقب: {nickname}"
+        await query.edit_message_caption(caption=text)
+
 if __name__ == "__main__":
-    print("🤖 ربات استارت شد... منتظره دستوره!")
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("steam", steam))
+    app.add_handler(CallbackQueryHandler(button_handler))
     app.run_polling()
