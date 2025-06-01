@@ -49,7 +49,10 @@ def fetch_owned_games(steam_id):
 
 async def steam(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-       await update.message.reply_text("🧩 لطفاً Steam ID خودت رو وارد کن:\nمثلاً:\n76561197960435530 یا gaben")
+   await update.message.reply_text("""🧩 لطفاً Steam ID خودت رو وارد کن:
+مثلاً:
+76561197960435530 یا gaben""")
+
         return
     steam_id = context.args[0]
     summary = fetch_steam_summary(steam_id)
