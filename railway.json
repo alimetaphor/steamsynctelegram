@@ -1,0 +1,11 @@
+
+{
+  "build": {
+    "env": {
+      "PYTHONUNBUFFERED": "1"
+    }
+  },
+  "deploy": {
+    "startCommand": "bash entrypoint.sh"
+  }
+}
