@@ -21,7 +21,7 @@ class SteamBot:
     def __init__(self):
         self.db = Database()
         self.steam_api = SteamAPI(os.getenv("STEAM_API_KEY"))
-        self.ADMINS = [123456789]  # آیدی عددی خودتان را اینجا قرار دهید
+        self.ADMINS = [40746772]  # آیدی عددی خودتان را اینجا قرار دهید
         
         # لیست لقب‌های بامزه
         self.nicknames = [
@@ -238,6 +238,35 @@ async def admin_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
             response = "🎮 کاربران آنلاین گروه:\n\n" + "\n".join(online_list)
         
         await update.message.reply_text(response)
+if __name__ == "__main__":
+    steam = SteamAPI(STEAM_API_KEY)
+    db = Database()
+
+    # ۱. گرفتن اطلاعات پروفایل
+    profile = steam.get_player_summary(STEAM_ID)
+    if not profile:
+        print("❌ نتونستم پروفایل استیم رو دریافت کنم.")
+    else:
+        # ۲. گرفتن بازی‌ها
+        games = steam.get_owned_games(STEAM_ID)
+        total_games = len(games)
+
+        # ۳. ذخیره در دیتابیس
+        db.save_user_data(
+            telegram_id=TEST_TELEGRAM_ID,
+            username=TEST_USERNAME,
+            steam_id=STEAM_ID,
+            display_name=profile.get("personaname", "Unknown"),
+            last_data=profile
+        )
+
+        # ۴. ساختن کارت گرافیکی پروفایل
+        generate_profile_card(
+            display_name=profile.get("personaname", "Unknown"),
+            avatar_url=profile.get("avatarfull", ""),
+            total_games=total_games,
+            last_seen=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+        )
 
 if __name__ == "__main__":
     bot = SteamBot()
