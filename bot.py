@@ -77,6 +77,7 @@ class SteamBot:
             response = "🎮 بازی‌های پرکاربرد شما:\n\n" + "\n".join(
                 f"{i+1}. {g['name']} - {g['playtime_forever']//60} ساعت"
                 for i, g in enumerate(top_games)
+                )  # پرانتز اضافه شده اینجا
             
             await query.edit_message_caption(caption=response)
 
