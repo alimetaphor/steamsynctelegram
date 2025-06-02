@@ -9,34 +9,26 @@ class SteamAPI:
             raise ValueError("❌ کلید API استیم پیدا نشد. لطفاً متغیر محیطی STEAM_API_KEY را تنظیم کنید.")
 
     def get_player_summary(self, steam_id):
-        url = f"{self.base_url}/ISteamUser/GetPlayerSummaries/v0002/"
+        url = f"{self.BASE_URL}/ISteamUser/GetPlayerSummaries/v0002/"
         params = {
             "key": self.api_key,
             "steamids": steam_id
         }
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-            data = response.json()
-            players = data.get("response", {}).get("players", [])
-            if not players:
-                print(f"[WARN] No player summary found for Steam ID: {steam_id}")
-                return None
-            return players[0]
-        except requests.exceptions.HTTPError as e:
-            print(f"[ERROR] HTTP error in get_player_summary: {e}")
-        except Exception as e:
-            print(f"[ERROR] Unexpected error in get_player_summary: {e}")
-        return None
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        players = response.json().get("response", {}).get("players", [])
+        return players[0] if players else None
 
     def get_owned_games(self, steam_id):
-        url = f"{self.base_url}/IPlayerService/GetOwnedGames/v0001/"
+        url = f"{self.BASE_URL}/IPlayerService/GetOwnedGames/v0001/"
         params = {
             "key": self.api_key,
             "steamid": steam_id,
-            "include_appinfo": True,
-            "include_played_free_games": True
+            "include_appinfo": 1
         }
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json().get("response", {}).get("games", [])
         try:
             response = requests.get(url, params=params)
             response.raise_for_status()
