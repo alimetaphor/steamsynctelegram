@@ -133,77 +133,81 @@ class SteamBot:
         
         elif data.startswith("profile_"):
             summary = self.steam_api.get_player_summary(steam_id)
-            
-            # وضعیت آنلاین/آفلاین
-            status_map = {
-                0: "🟢 آنلاین",
-                1: "🔴 آفلاین",
-                2: "🟠 مشغول",
-                3: "⏰ اشغال",
-                4: "🍃 دورباش",
-                5: "💼 مایل به معامله",
-                6: "💤 مایل به پلی"
-            }
-            status_code = summary.get('personastate', 1)
-            status_text = status_map.get(status_code, "🔴 آفلاین")
-            
-            # بازی فعلی
-            current_game = "در حال بازی: " + summary.get('gameextrainfo', 'هیچ بازی') if 'gameextrainfo' in summary else "در حال حاضر بازی نمی‌کند"
-            
-            response = f"""🧑‍🚀 اطلاعات پروفایل:
-            
+        
+        # وضعیت آنلاین/آفلاین
+        status_map = {
+            0: "🟢 آنلاین",
+            1: "🔴 آفلاین",
+            2: "🟠 مشغول",
+            3: "⏰ اشغال",
+            4: "🍃 دورباش",
+            5: "💼 مایل به معامله",
+            6: "💤 مایل به پلی"
+        }
+        status_code = summary.get('personastate', 1)
+        status_text = status_map.get(status_code, "🔴 آفلاین")
+        
+        # بازی فعلی
+        current_game = "در حال بازی: " + summary.get('gameextrainfo', 'هیچ بازی') if 'gameextrainfo' in summary else "در حال حاضر بازی نمی‌کند"
+        
+        response = f"""🧑‍🚀 اطلاعات پروفایل:
+        
 🆔 SteamID: {steam_id}
 👤 نام نمایشی: {summary['personaname']}
 🔗 پروفایل: {summary['profileurl']}
 📶 وضعیت: {status_text} {f'| {current_game}' if status_code != 1 else ''}"""
-            
-            await context.bot.send_message(
-                chat_id=query.message.chat_id,
-                text=response
-            )
+        
+        await context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=response
+        )
+
+# این بخش باید خارج از کلاس باشد (برای تست)
+if __name__ == "__main__":
     steam = SteamAPI(api_key="YOUR_STEAM_API_KEY")
-db = Database()
+    db = Database()
+    
+    # ۱. گرفتن اطلاعات از استیم
+    steam_id = "7656119xxxxxxxxxx"
+    profile = steam.get_player_summary(steam_id)
+    games = steam.get_owned_games(steam_id)
+    total_games = len(games)
+    
+    # ۲. ذخیره در دیتابیس
+    db.save_user_data(
+        telegram_id="123456789",
+        username="ali_the_wolf",
+        steam_id=steam_id,
+        display_name=profile["personaname"],
+        last_data=profile
+    )
+    
+    # ۳. تولید کارت تصویری
+    generate_profile_card(
+        display_name=profile["personaname"],
+        avatar_url=profile["avatarfull"],
+        total_games=total_games,
+        last_seen=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    )
 
-# ۱. گرفتن اطلاعات از استیم
-steam_id = "7656119xxxxxxxxxx"
-profile = steam.get_player_summary(steam_id)
-games = steam.get_owned_games(steam_id)
-total_games = len(games)
-
-# ۲. ذخیره در دیتابیس
-db.save_user_data(
-    telegram_id="123456789",
-    username="ali_the_wolf",
-    steam_id=steam_id,
-    display_name=profile["personaname"],
-    last_data=profile
-)
-
-# ۳. تولید کارت تصویری
-generate_profile_card(
-    display_name=profile["personaname"],
-    avatar_url=profile["avatarfull"],
-    total_games=total_games,
-    last_seen=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
-)
-    async def admin_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if update.effective_user.id not in self.ADMINS:
-            await update.message.reply_text("⛔ دسترسی ممنوع!")
-            return
-        
-        total_users = self.db.get_total_users()
-        recent_users = self.db.get_recent_users()
-        
-        response = f"""📊 آمار دیتابیس:
-        
+async def admin_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id not in self.ADMINS:
+        await update.message.reply_text("⛔ دسترسی ممنوع!")
+        return
+    
+    total_users = self.db.get_total_users()
+    recent_users = self.db.get_recent_users()
+    
+    response = f"""📊 آمار دیتابیس:
+    
 👥 تعداد کل کاربران: {total_users}
-        
+    
 🆕 آخرین کاربران:"""
-        
-        for user in recent_users:
-            response += f"\n- {user[0]} (SteamID: {user[1]}) - آخرین فعالیت: {user[2]}"
-        
-        await update.message.reply_text(response)
+    
+    for user in recent_users:
+        response += f"\n- {user[0]} (SteamID: {user[1]}) - آخرین فعالیت: {user[2]}"
+    
+    await update.message.reply_text(response)
     
     async def online_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """نمایش کاربران آنلاین در گروه"""
