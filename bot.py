@@ -102,6 +102,8 @@ try:
         for i, g in enumerate(top_games[:10])  # فقط 10 بازی اول
     )
     await query.edit_message_text(msg)
+except Exception as e:
+    await query.edit_message_text(f"خطا در پردازش بازی‌ها: {str(e)}")
 
         elif data.startswith("stats_"):
             games = self.steam_api.get_owned_games(steam_id)
