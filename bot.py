@@ -164,37 +164,6 @@ class SteamBot:
             text=response
         )
 
-# این بخش باید خارج از کلاس باشد (برای تست)
-if __name__ == "__main__":
-
-    steam = SteamAPI()
-    db = Database()
-
-    # ۱. گرفتن اطلاعات از استیم
-    steam_id = "7656119xxxxxxxxxx"
-    profile = steam.get_player_summary(steam_id)
-    games = steam.get_owned_games(steam_id)
-    total_games = len(games)
-
-    if profile:
-        # ۲. ذخیره در دیتابیس
-        db.save_user_data(
-            telegram_id="123456789",
-            username="ali_the_wolf",
-            steam_id=steam_id,
-            display_name=profile.get("personaname", "Unknown"),
-            last_data=profile
-        )
-
-        # ۳. تولید کارت تصویری
-        generate_profile_card(
-            display_name=profile.get("personaname", "Unknown"),
-            avatar_url=profile.get("avatarfull", ""),
-            total_games=total_games,
-            last_seen=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
-        )
-    else:
-        print(f"[ERROR] Could not fetch profile for SteamID: {steam_id}")
 
 async def admin_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in self.ADMINS:
