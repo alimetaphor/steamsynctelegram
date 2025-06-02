@@ -92,3 +92,11 @@ class SteamAPI:
         except Exception as e:
             print(f"[ERROR] Unexpected error in get_recently_played_games: {e}")
         return []
+    def resolve_vanity_url(self, vanity_url):
+        url = f"{self.base_url}/ISteamUser/ResolveVanityURL/v1/"
+        params = {"key": self.api_key, "vanityurl": vanity_url}
+        response = requests.get(url, params=params)
+        data = response.json()
+        if data.get("response", {}).get("success") == 1:
+            return data["response"]["steamid"]
+        return None
