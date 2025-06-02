@@ -10,7 +10,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, Callb
 from steam_api import SteamAPI
 from db import Database
 from imagegen import generate_profile_card
-from database import save_user_to_db
+from db import save_user_to_db
 from imagegen import generate_profile_card
 
 
