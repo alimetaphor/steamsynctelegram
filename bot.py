@@ -102,6 +102,35 @@ class SteamBot:
             text=response
         )
 
+async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # لیست ادمین‌های مجاز (آیدی عددی شما)
+    ADMINS = [40746772]  # آیدی عددی خودتون رو اینجا قرار بدید
+    
+    if update.effective_user.id not in ADMINS:
+        await update.message.reply_text("⛔ دسترسی ممنوع!")
+        return
+    
+    cursor = self.db.conn.cursor()
+    
+    # آمار کلی کاربران
+    cursor.execute("SELECT COUNT(*) FROM users")
+    total_users = cursor.fetchone()[0]
+    
+    # کاربران اخیر
+    cursor.execute("SELECT username, steam_id, last_seen FROM users ORDER BY last_seen DESC LIMIT 5")
+    recent_users = cursor.fetchall()
+    
+    response = f"""📊 آمار دیتابیس:
+    
+👥 تعداد کل کاربران: {total_users}
+    
+🆕 آخرین کاربران:"""
+    
+    for user in recent_users:
+        response += f"\n- {user[0]} (SteamID: {user[1]}) - آخرین فعالیت: {user[2]}"
+    
+    await update.message.reply_text(response)
+    
 if __name__ == "__main__":
     bot = SteamBot()
     app = ApplicationBuilder().token(os.getenv("TELEGRAM_TOKEN")).build()
