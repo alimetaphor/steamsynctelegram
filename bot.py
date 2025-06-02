@@ -33,13 +33,12 @@ class SteamBot:
         ]
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_text(
-            "سلام رفیق! من SteamSyncBot هستم.
-"
-            "اگه می‌خوای اطلاعات استیمت رو ببینی، اینطوری بزن:
-"
-            "/steam آیدی‌ت (یا vanity URL)"
-        )
+       await update.message.reply_text(
+    "سلام رفیق! من SteamSyncBot هستم.\n"
+    "اگه می‌خوای اطلاعات استیمت رو ببینی، اینطوری بزن:\n"
+    "/steam آیدی‌ت (یا vanity URL)"
+)
+
 
     async def steam(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not context.args:
