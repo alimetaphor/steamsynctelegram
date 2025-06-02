@@ -164,7 +164,7 @@ class SteamBot:
 
 # این بخش باید خارج از کلاس باشد (برای تست)
 if __name__ == "__main__":
-    steam = SteamAPI(api_key="YOUR_STEAM_API_KEY")
+    steam = SteamAPI(api_key="D87470A5316B8FB5AEFB2E5CEA132380")
     db = Database()
     
     # ۱. گرفتن اطلاعات از استیم
