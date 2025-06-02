@@ -1,3 +1,4 @@
+import os
 import requests
 
 class SteamAPI:
@@ -29,6 +30,7 @@ class SteamAPI:
         response = requests.get(url, params=params)
         response.raise_for_status()
         return response.json().get("response", {}).get("games", [])
+
         try:
             response = requests.get(url, params=params)
             response.raise_for_status()
