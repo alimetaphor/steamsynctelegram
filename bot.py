@@ -65,21 +65,42 @@ class SteamBot:
             await update.message.reply_text("لطفاً آیدی عددی استیمت رو بنویس")
 
     async def button_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query
-        await query.answer()
+    query = update.callback_query
+    await query.answer()
+    
+    data = query.data
+    steam_id = data.split('_')[1]
+    
+    if data.startswith("games_"):
+        games = self.steam_api.get_owned_games(steam_id)
+        top_games = sorted(games, key=lambda x: x.get("playtime_forever", 0), reverse=True)[:5]
         
-        data = query.data
-        if data.startswith("games_"):
-            steam_id = data.split("_")[1]
-            games = self.steam_api.get_owned_games(steam_id)
-            top_games = sorted(games, key=lambda x: x.get("playtime_forever", 0), reverse=True)[:3]
-            
-            response = "🎮 بازی‌های پرکاربرد شما:\n\n" + "\n".join(
-                f"{i+1}. {g['name']} - {g['playtime_forever']//60} ساعت"
-                for i, g in enumerate(top_games)
-                )  # پرانتز اضافه شده اینجا
-            
-            await query.edit_message_caption(caption=response)
+        response = "🎮 ۵ بازی پرکاربرد شما:\n\n" + "\n".join(
+            f"{i+1}. {g['name']} - {g['playtime_forever']//60} ساعت"
+            for i, g in enumerate(top_games)
+        )
+        
+        # ارسال پیام جدید بدون تغییر پست اصلی
+        await context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=response
+        )
+    
+    elif data.startswith("stats_"):
+        games = self.steam_api.get_owned_games(steam_id)
+        total_hours = sum(g['playtime_forever'] for g in games) // 60
+        total_games = len(games)
+        
+        response = f"""📊 آمار بازی‌های شما:
+        
+🎮 تعداد بازی‌ها: {total_games}
+⏳ مجموع ساعت‌های بازی: {total_hours} ساعت
+🏆 میانگین ساعت بازی برای هر بازی: {total_hours//total_games if total_games > 0 else 0} ساعت"""
+        
+        await context.bot.send_message(
+            chat_id=query.message.chat_id,
+            text=response
+        )
 
 if __name__ == "__main__":
     bot = SteamBot()
