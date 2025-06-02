@@ -42,8 +42,8 @@ class SteamBot:
 
     async def steam(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not context.args:
-            await update.message.reply_text("آیدی استیمت رو بزن دیگه!
-مثال: /steam gaben")
+            await update.message.reply_text("""آیدی استیمت رو بزن دیگه!
+مثال: /steam gaben""")
             return
 
         steam_id = context.args[0]
@@ -62,9 +62,9 @@ class SteamBot:
             nickname = random.choice(self.nicknames)
 
             keyboard = [
-                [InlineKeyboardButton("🎮 بازی‌های پرکاربرد", callback_data=f"games_{steam_id}"),
-                 InlineKeyboardButton("📊 آمار من", callback_data=f"stats_{steam_id}")],
-                [InlineKeyboardButton("🧑‍🚀 پروفایل تصویری", callback_data=f"profilepic_{steam_id}")]
+                [InlineKeyboardButton("""🎮 بازی‌های پرکاربرد""", callback_data=f"games_{steam_id}"),
+                 InlineKeyboardButton("""📊 آمار من""", callback_data=f"stats_{steam_id}")],
+                [InlineKeyboardButton("""🧑‍🚀 پروفایل تصویری""", callback_data=f"profilepic_{steam_id}")]
             ]
 
             caption = f"{summary['personaname']}
@@ -78,7 +78,7 @@ class SteamBot:
             )
         except Exception as e:
             logging.error(e)
-            await update.message.reply_text("یه مشکلی پیش اومد! آیدی درست بود؟")
+            await update.message.reply_text("""یه مشکلی پیش اومد! آیدی درست بود؟""")
 
     async def button_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         query = update.callback_query
@@ -95,7 +95,7 @@ class SteamBot:
             )[:5]
 
             if not top_games:
-                await query.edit_message_text("هنوز بازی‌ای ثبت نشده!")
+                await query.edit_message_text("""هنوز بازی‌ای ثبت نشده!""")
                 return
 
             msg = "پرپلی‌ترین‌ بازی‌هات:
