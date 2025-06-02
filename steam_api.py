@@ -1,9 +1,12 @@
 import requests
 
 class SteamAPI:
-    def __init__(self, api_key):
-        self.api_key = api_key
-        self.base_url = "https://api.steampowered.com"
+    BASE_URL = "http://api.steampowered.com"
+
+    def __init__(self, api_key=None):
+        self.api_key = api_key or os.environ.get("STEAM_API_KEY")
+        if not self.api_key:
+            raise ValueError("❌ کلید API استیم پیدا نشد. لطفاً متغیر محیطی STEAM_API_KEY را تنظیم کنید.")
 
     def get_player_summary(self, steam_id):
         url = f"{self.base_url}/ISteamUser/GetPlayerSummaries/v0002/"
