@@ -93,8 +93,8 @@ class SteamBot:
             )[:5]
 
         if not top_games:
-    await query.edit_message_text("""هنوز بازی‌ای ثبت نشده!""")
-    return
+            await query.edit_message_text("""هنوز بازی‌ای ثبت نشده!""")
+            return
 
 try:
     msg = "پرپلی‌ترین‌ بازی‌هات:\n" + "\n".join(
