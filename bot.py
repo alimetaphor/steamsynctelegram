@@ -93,16 +93,15 @@ class SteamBot:
             )[:5]
 
             if not top_games:
-                await query.edit_message_text("""هنوز بازی‌ای ثبت نشده!""")
-                return
+    await query.edit_message_text("هنوز بازی‌ای ثبت نشده!")
+    return
 
-            msg = "پرپلی‌ترین‌ بازی‌هات:
-
-" + "\n".join(
-                f"{i+1}. {g['name']} - {g['playtime_forever']//60} ساعت"
-                for i, g in enumerate(top_games)
-            )
-            await query.edit_message_text(msg)
+try:
+    msg = "پرپلی‌ترین‌ بازی‌هات:\n" + "\n".join(
+        f"{i+1}. {g.get('name', 'نامشخص')} - {g.get('playtime_forever', 0)//60} ساعت"
+        for i, g in enumerate(top_games[:10])  # فقط 10 بازی اول
+    )
+    await query.edit_message_text(msg)
 
         elif data.startswith("stats_"):
             games = self.steam_api.get_owned_games(steam_id)
