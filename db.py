@@ -32,3 +32,13 @@ class Database:
             last_fetched_data=excluded.last_fetched_data
         """, (telegram_id, username, steam_id, display_name, datetime.utcnow(), json.dumps(last_data)))
         self.conn.commit()
+
+    def get_recent_users(self, limit=5):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT username, steam_id, last_seen FROM users ORDER BY last_seen DESC LIMIT ?", (limit,))
+        return cursor.fetchall()
+
+    def get_total_users(self):
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM users")
+        return cursor.fetchone()[0]
