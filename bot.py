@@ -164,7 +164,8 @@ class SteamBot:
 
 # این بخش باید خارج از کلاس باشد (برای تست)
 if __name__ == "__main__":
-    steam = SteamAPI()  # کلید از ENV خونده میشه
+
+    steam = SteamAPI()
     db = Database()
 
     # ۱. گرفتن اطلاعات از استیم
