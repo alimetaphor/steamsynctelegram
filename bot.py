@@ -7,7 +7,9 @@ import logging
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import random
+from steam_api import SteamAPI
 
+steam = SteamAPI()
 # بارگذاری متغیرهای محیطی
 load_dotenv()
 
