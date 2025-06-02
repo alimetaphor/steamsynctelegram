@@ -106,13 +106,12 @@ except Exception as e:
     await query.edit_message_text(f"خطا در پردازش بازی‌ها: {str(e)}")
 
         elif data.startswith("stats_"):
-            games = self.steam_api.get_owned_games(steam_id)
-            total = sum(g["playtime_forever"] for g in games) // 60
-            nickname = "نوب سگ" if total < 100 else (
+              games = self.steam_api.get_owned_games(steam_id)
+              total = sum(g["playtime_forever"] for g in games) // 60
+              nickname = "نوب سگ" if total < 100 else (
                 "تازه‌کار جان‌سخت" if total < 500 else (
-                    "افسانه‌ی خواب‌ندیده" if total < 1000 else "رئیس قبیله"
-                )
-            )
+                    "افسانه‌ی خواب‌ندیده" if total < 1000 else "رئیس قبیله")
+              )
             await query.edit_message_text(
                 f"آمار کلی:
 تعداد بازی‌هات: {len(games)}
@@ -121,9 +120,9 @@ except Exception as e:
             )
 
         elif data.startswith("profilepic_"):
-            summary = self.steam_api.get_player_summary(steam_id)
-            games = self.steam_api.get_owned_games(steam_id)
-            filename = f"/tmp/{steam_id}_card.png"
+              summary = self.steam_api.get_player_summary(steam_id)
+              games = self.steam_api.get_owned_games(steam_id)
+              filename = f"/tmp/{steam_id}_card.png"
             generate_profile_card(
                 display_name=summary["personaname"],
                 avatar_url=summary["avatarfull"],
