@@ -67,8 +67,8 @@ class SteamBot:
                 [InlineKeyboardButton("""🧑‍🚀 پروفایل تصویری""", callback_data=f"profilepic_{steam_id}")]
             ]
 
-            caption = f"{summary['personaname']}
-تعداد بازی‌هات: {len(games)}
+            caption = f"{summary['personaname']}n\
+تعداد بازی‌هات: {len(games)}n\
 لقبت: {nickname}"
 
             await update.message.reply_photo(
