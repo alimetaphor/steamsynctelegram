@@ -9,10 +9,10 @@ from datetime import datetime, timedelta
 import random
 from steam_api import SteamAPI
 
-steam = SteamAPI()
-# بارگذاری متغیرهای محیطی
-load_dotenv()
 
+# بارگذاری متغیرهای محیطی
+steam = SteamAPI()
+load_dotenv()
 # تنظیمات لاگ
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
