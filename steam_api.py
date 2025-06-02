@@ -1,5 +1,6 @@
 import requests
 from functools import lru_cache
+from datetime import datetime
 
 class SteamAPI:
     def __init__(self, api_key):
