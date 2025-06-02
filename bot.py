@@ -82,68 +82,73 @@ class SteamBot:
             await update.message.reply_text("یه مشکلی پیش اومد! آیدی درست بود؟")
 
     async def button_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query
-        await query.answer()
-        data = query.data
-        steam_id = data.split("_")[1]
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+    steam_id = data.split("_")[1]
 
-        if data.startswith("games_"):
-            try:
-                games = self.steam_api.get_owned_games(steam_id)
-                top_games = sorted(
-                    [g for g in games if g.get("playtime_forever", 0) > 0],
-                    key=lambda g: g["playtime_forever"],
-                    reverse=True
-                )[:5]
+    if data.startswith("games_"):
+        try:
+            games = self.steam_api.get_owned_games(steam_id)
+            top_games = sorted(
+                [g for g in games if g.get("playtime_forever", 0) > 0],
+                key=lambda g: g["playtime_forever"],
+                reverse=True
+            )[:5]
 
-                if not top_games:
-                    await query.edit_message_text("هنوز بازی‌ای ثبت نشده!")
-                    return
+            if not top_games:
+                # تغییر به edit_message_caption
+                await query.edit_message_caption(caption="هنوز بازی‌ای ثبت نشده!")
+                return
 
-                msg = "پرپلی‌ترین‌ بازی‌هات:\n" + "\n".join(
-                    f"{i+1}. {g.get('name', 'نامشخص')} - {g.get('playtime_forever', 0)//60} ساعت"
-                    for i, g in enumerate(top_games[:10])
-                )
-                await query.edit_message_text(msg)
-            except Exception as e:
-                await query.edit_message_text(f"خطا در پردازش بازی‌ها: {str(e)}")
+            msg = "پرپلی‌ترین‌ بازی‌هات:\n" + "\n".join(
+                f"{i+1}. {g.get('name', 'نامشخص')} - {g.get('playtime_forever', 0)//60} ساعت"
+                for i, g in enumerate(top_games[:10])
+            )
+            # تغییر به edit_message_caption
+            await query.edit_message_caption(caption=msg)
+        except Exception as e:
+            # تغییر به edit_message_caption
+            await query.edit_message_caption(caption=f"خطا در پردازش بازی‌ها: {str(e)}")
 
-        elif data.startswith("stats_"):
-            try:
-                games = self.steam_api.get_owned_games(steam_id)
-                total = sum(g["playtime_forever"] for g in games) // 60
-                nickname = "نوب سگ" if total < 100 else (
-                    "تازه‌کار جان‌سخت" if total < 500 else (
-                        "افسانه‌ی خواب‌ندیده" if total < 1000 else "رئیس قبیله")
-                )
-                text = (
-                    f"آمار کلی:\n"
-                    f"تعداد بازی‌هات: {len(games)}\n"
-                    f"تایم پلی: {total} ساعت\n"
-                    f"لقب: {nickname}"
-                )
-                await query.edit_message_text(text)
-            except Exception as e:
-                await query.edit_message_text(f"خطا در دریافت آمار: {str(e)}")
+    elif data.startswith("stats_"):
+        try:
+            games = self.steam_api.get_owned_games(steam_id)
+            total = sum(g["playtime_forever"] for g in games) // 60
+            nickname = "نوب سگ" if total < 100 else (
+                "تازه‌کار جان‌سخت" if total < 500 else (
+                    "افسانه‌ی خواب‌ندیده" if total < 1000 else "رئیس قبیله")
+            )
+            text = (
+                f"آمار کلی:\n"
+                f"تعداد بازی‌هات: {len(games)}\n"
+                f"تایم پلی: {total} ساعت\n"
+                f"لقب: {nickname}"
+            )
+            # تغییر به edit_message_caption
+            await query.edit_message_caption(caption=text)
+        except Exception as e:
+            # تغییر به edit_message_caption
+            await query.edit_message_caption(caption=f"خطا در دریافت آمار: {str(e)}")
 
-        elif data.startswith("profilepic_"):
-            try:
-                summary = self.steam_api.get_player_summary(steam_id)
-                games = self.steam_api.get_owned_games(steam_id)
-                filename = f"/tmp/{steam_id}_card.png"
-                
-                generate_profile_card(
-                    display_name=summary["personaname"],
-                    avatar_url=summary["avatarfull"],
-                    total_games=len(games),
-                    last_seen=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
-                    filename=filename
-                )
-                
-                await query.message.reply_photo(photo=open(filename, "rb"))
-            except Exception as e:
-                await query.edit_message_text(f"خطا در ساخت پروفایل: {str(e)}")
-
+    elif data.startswith("profilepic_"):
+        try:
+            summary = self.steam_api.get_player_summary(steam_id)
+            games = self.steam_api.get_owned_games(steam_id)
+            filename = f"/tmp/{steam_id}_card.png"
+            
+            generate_profile_card(
+                display_name=summary["personaname"],
+                avatar_url=summary["avatarfull"],
+                total_games=len(games),
+                last_seen=datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+                filename=filename
+            )
+            
+            await query.message.reply_photo(photo=open(filename, "rb"))
+        except Exception as e:
+            # تغییر به edit_message_caption
+            await query.edit_message_caption(caption=f"خطا در ساخت پروفایل: {str(e)}")
 if __name__ == "__main__":
     load_dotenv()
     nest_asyncio.apply()
