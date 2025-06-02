@@ -1,3 +1,5 @@
+# steam_bot.py
+
 import os
 import logging
 import random
@@ -5,10 +7,10 @@ from datetime import datetime
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
+
 from steam_api import SteamAPI
 from db import Database
 from imagegen import generate_profile_card
-
 
 load_dotenv()
 
@@ -18,7 +20,7 @@ logging.basicConfig(
 )
 
 class SteamBot:
-    def __init__(self, steam_api_key):
+    def __init__(self, steam_api_key: str):
         self.steam = SteamAPI(steam_api_key)
         self.db = Database()
         self.ADMINS = [40746772]  # آیدی عددی خودت
@@ -32,45 +34,47 @@ class SteamBot:
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
-            "🎮 به ربات SteamSync خوش آمدید!\n\n"
-            "برای شروع، آیدی استیم خود را با دستور زیر وارد کنید:\n"
-            "/steam [آی‌دی_شما]"
+            "🎮 به ربات SteamSync خوش اومدی!\n\n"
+            "برای شروع، آیدی استیم خودتو با این دستور وارد کن:\n"
+            "`/steam [آی‌دی_شما]`\nمثال:\n`/steam gaben`",
+            parse_mode="Markdown"
         )
 
     async def handle_steam_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         args = update.message.text.split()
-
         if len(args) < 2:
-            await update.message.reply_text(
-                "⛔ لطفاً SteamID یا نام کاربری Steam رو بعد از دستور بنویس.\nمثال:\n/steam gaben"
-            )
+            await update.message.reply_text("⛔ لطفاً SteamID یا نام کاربری‌تو بنویس.\nمثال: /steam gaben")
             return
 
         user_input = args[1]
         steam_id = user_input
+        user_id = update.message.from_user.id
 
-        # اگه Vanity URL باشه تبدیل کن
         if not steam_id.isdigit():
             steam_id = self.steam.resolve_vanity_url(user_input)
             if not steam_id:
-                await update.message.reply_text("😕 نتونستم SteamID رو پیدا کنم. لطفاً بررسی کن درست باشه.")
+                await update.message.reply_text("😕 نتونستم SteamID رو پیدا کنم. لطفاً بررسیش کن.")
                 return
 
-        profile = self.steam.get_player_summary(steam_id)
-        if not profile:
-            await update.message.reply_text("😐 پروفایلی با این SteamID پیدا نکردم.")
+        try:
+            profile = self.steam.get_player_summary(steam_id)
+            if not profile:
+                await update.message.reply_text("😐 پروفایلی با این SteamID پیدا نکردم.")
+                return
+
+            games = self.steam.get_owned_games(steam_id)
+        except Exception as e:
+            logging.error(f"خطا در گرفتن اطلاعات استیم: {e}")
+            await update.message.reply_text("🚫 مشکلی پیش اومد هنگام دریافت اطلاعات از Steam.")
             return
 
-        games = self.steam.get_owned_games(steam_id)
-        total_games = len(games)
         display_name = profile.get("personaname", "نامشخص")
         avatar_url = profile.get("avatarfull", "")
+        total_games = len(games)
         last_seen = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
-        #ذخیره در دیتابیس
-        db = Database()
-        db.save_user_data(
-            telegram_id=update.message.from_user.id,
+        self.db.save_user_data(
+            telegram_id=user_id,
             steam_id=steam_id,
             display_name=display_name,
             avatar_url=avatar_url,
@@ -78,7 +82,6 @@ class SteamBot:
             last_updated=last_seen
         )
 
-        # ساخت کارت گرافیکی
         generate_profile_card(
             display_name=display_name,
             avatar_url=avatar_url,
@@ -111,76 +114,73 @@ class SteamBot:
         data = query.data
         steam_id = data.split('_')[1]
 
-        if data.startswith("games_"):
-            games = self.steam.get_owned_games(steam_id)
-            games_with_playtime = [g for g in games if g.get("playtime_forever", 0) > 0]
-            top_games = sorted(games_with_playtime, key=lambda x: x.get("playtime_forever", 0), reverse=True)[:5]
+        try:
+            if data.startswith("games_"):
+                games = self.steam.get_owned_games(steam_id)
+                games_with_playtime = [g for g in games if g.get("playtime_forever", 0) > 0]
+                top_games = sorted(games_with_playtime, key=lambda x: x["playtime_forever"], reverse=True)[:5]
 
-            if not top_games:
-                response = "هنوز بازی‌ای با زمان بازی ثبت نشده! 🎮"
-            else:
-                response = "🎮 ۵ بازی پرکاربرد شما:\n\n" + "\n".join(
-                    f"{i+1}. {g['name']} - {round(g['playtime_forever']/60)} ساعت"
-                    for i, g in enumerate(top_games)
+                if not top_games:
+                    response = "هنوز بازی‌ای با زمان بازی ثبت نشده! 🎮"
+                else:
+                    response = "🎮 ۵ بازی پرکاربرد شما:\n\n" + "\n".join(
+                        f"{i+1}. {g['name']} - {round(g['playtime_forever']/60)} ساعت"
+                        for i, g in enumerate(top_games)
+                    )
+
+                await query.message.reply_text(response)
+
+            elif data.startswith("stats_"):
+                games = self.steam.get_owned_games(steam_id)
+                hours = sum(g['playtime_forever'] for g in games if g.get("playtime_forever", 0) > 0) // 60
+                nickname = "🎲 نوب سگ"
+                if hours > 1000:
+                    nickname = "🔥 افسانه بی‌وقفه"
+                elif hours > 500:
+                    nickname = "⚔️ جنگجوی تازه‌کار"
+                elif hours > 100:
+                    nickname = "🎯 تیرانداز حرفه‌ای"
+
+                response = (
+                    f"📊 آمار بازی‌های شما:\n\n"
+                    f"🎮 تعداد بازی‌ها: {len(games)}\n"
+                    f"⏳ مجموع ساعت بازی: {hours} ساعت\n"
+                    f"🏆 لقب: {nickname}"
                 )
+                await query.message.reply_text(response)
 
-            await context.bot.send_message(chat_id=query.message.chat_id, text=response)
+            elif data.startswith("profile_"):
+                profile = self.steam.get_player_summary(steam_id)
+                if not profile:
+                    await query.message.reply_text("پروفایل پیدا نشد.")
+                    return
 
-        elif data.startswith("stats_"):
-            games = self.steam.get_owned_games(steam_id)
-            games_with_playtime = [g for g in games if g.get("playtime_forever", 0) > 0]
-            total_hours = sum(g['playtime_forever'] for g in games_with_playtime) // 60
-            total_games = len(games)
+                state_map = {
+                    0: "🟢 آنلاین",
+                    1: "🔴 آفلاین",
+                    2: "🟠 مشغول",
+                    3: "⏰ اشغال",
+                    4: "🍃 دورباش",
+                    5: "💼 مایل به معامله",
+                    6: "💤 مایل به پلی"
+                }
 
-            nickname = "🎲 نوب سگ"
-            if total_hours > 1000:
-                nickname = "🔥 افسانه بی‌وقفه"
-            elif total_hours > 500:
-                nickname = "⚔️ جنگجوی تازه‌کار"
-            elif total_hours > 100:
-                nickname = "🎯 تیرانداز حرفه‌ای"
+                status_code = profile.get("personastate", 1)
+                game = profile.get("gameextrainfo", "")
+                current = f"| 🎮 {game}" if game else ""
 
-            response = (
-                f"📊 آمار بازی‌های شما:\n\n"
-                f"🎮 تعداد بازی‌ها: {total_games}\n"
-                f"⏳ مجموع ساعت‌های بازی: {total_hours} ساعت\n"
-                f"🏆 لقب شما: {nickname}"
-            )
+                response = (
+                    f"🧑‍🚀 اطلاعات پروفایل:\n\n"
+                    f"🆔 SteamID: {steam_id}\n"
+                    f"👤 نام نمایشی: {profile['personaname']}\n"
+                    f"🔗 پروفایل: {profile['profileurl']}\n"
+                    f"📶 وضعیت: {state_map.get(status_code, '🔴 آفلاین')} {current}"
+                )
+                await query.message.reply_text(response)
 
-            await context.bot.send_message(chat_id=query.message.chat_id, text=response)
-
-        elif data.startswith("profile_"):
-            summary = self.steam.get_player_summary(steam_id)
-            if not summary:
-                await context.bot.send_message(chat_id=query.message.chat_id, text="پروفایل پیدا نشد.")
-                return
-
-            status_map = {
-                0: "🟢 آنلاین",
-                1: "🔴 آفلاین",
-                2: "🟠 مشغول",
-                3: "⏰ اشغال",
-                4: "🍃 دورباش",
-                5: "💼 مایل به معامله",
-                6: "💤 مایل به پلی"
-            }
-            status_code = summary.get('personastate', 1)
-            status_text = status_map.get(status_code, "🔴 آفلاین")
-
-            current_game = (
-                "در حال بازی: " + summary.get('gameextrainfo', 'هیچ بازی')
-                if 'gameextrainfo' in summary else "در حال حاضر بازی نمی‌کند"
-            )
-
-            response = (
-                f"🧑‍🚀 اطلاعات پروفایل:\n\n"
-                f"🆔 SteamID: {steam_id}\n"
-                f"👤 نام نمایشی: {summary['personaname']}\n"
-                f"🔗 پروفایل: {summary['profileurl']}\n"
-                f"📶 وضعیت: {status_text} {f'| {current_game}' if status_code != 1 else ''}"
-            )
-
-            await context.bot.send_message(chat_id=query.message.chat_id, text=response)
+        except Exception as e:
+            logging.error(f"خطا در اجرای دستور باتن: {e}")
+            await query.message.reply_text("🚫 مشکلی پیش اومد. لطفاً دوباره امتحان کن.")
 
     async def admin_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if update.effective_user.id not in self.ADMINS:
@@ -198,7 +198,7 @@ class SteamBot:
 
     async def online_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         if update.effective_chat.type not in ["group", "supergroup"]:
-            await update.message.reply_text("این دستور فقط در گروه‌ها قابل استفاده است!")
+            await update.message.reply_text("⛔ این دستور فقط در گروه‌ها قابل استفاده‌ست.")
             return
 
         recent_users = self.db.get_recent_users(limit=20)
@@ -208,19 +208,17 @@ class SteamBot:
             steam_id = user[1]
             try:
                 summary = self.steam.get_player_summary(steam_id)
-                if summary.get('personastate', 0) > 0:
-                    game = summary.get('gameextrainfo', 'بدون بازی')
+                if summary.get("personastate", 0) > 0:
+                    game = summary.get("gameextrainfo", "بدون بازی")
                     online_list.append(f"👤 {user[0]} - 🎮 {game}")
             except Exception as e:
                 logging.warning(f"خطا در بررسی وضعیت کاربر {steam_id}: {e}")
                 continue
 
         if not online_list:
-            response = "هیچ کاربر آنلاینی در گروه پیدا نشد! 😢"
+            await update.message.reply_text("هیچ کاربر آنلاینی در گروه نیست! 😢")
         else:
-            response = "🎮 کاربران آنلاین گروه:\n\n" + "\n".join(online_list)
-
-        await update.message.reply_text(response)
+            await update.message.reply_text("🎮 کاربران آنلاین:\n\n" + "\n".join(online_list))
 
 
 async def main():
@@ -238,6 +236,7 @@ async def main():
     app.add_handler(CallbackQueryHandler(bot.button_handler))
 
     await app.run_polling()
+
 
 if __name__ == "__main__":
     import asyncio
