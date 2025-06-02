@@ -8,6 +8,13 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import random
 from steam_api import SteamAPI
+import sqlite3
+from utils.imagegen import generate_profile_card
+import telebot
+from steam_api import SteamAPI
+from database import save_user_to_db
+from graphics import generate_profile_card
+from datetime import datetime
 
 
 # بارگذاری متغیرهای محیطی
@@ -20,9 +27,13 @@ logging.basicConfig(
 )
 
 class SteamBot:
-    def __init__(self):
+    def __init__(self, token, steam_api_key):
+        self.bot = telebot.TeleBot(token)
+        self.steam = SteamAPI(steam_api_key)
+
+        # اتصال به هندلرهای دستورها
+        self.bot.message_handler(commands=["steam"])(self.handle_steam_command)
         self.db = Database()
-        self.steam_api = SteamAPI(os.getenv("STEAM_API_KEY"))
         self.ADMINS = [40746772]  # آیدی عددی خودتان را اینجا قرار دهید
         
         # لیست لقب‌های بامزه
@@ -41,23 +52,59 @@ class SteamBot:
             "/steam [آی‌دی_شما]"
         )
     
-    async def steam(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if not context.args:
-            await update.message.reply_text("لطفاً آیدی استیم خود را وارد کنید\nمثال:\n/steam 76561197960435530")
+    async  def handle_steam_command(self, message):
+        args = message.text.split()
+
+        if len(args) < 2:
+            self.bot.reply_to(message, "⛔ لطفاً SteamID یا نام کاربری Steam رو بعد از دستور بنویس.\nمثال:\n/steam gaben")
             return
-        
-        steam_id = context.args[0]
-        try:
-            summary = self.steam_api.get_player_summary(steam_id)
-            games = self.steam_api.get_owned_games(steam_id)
-            
-            self.db.save_user_data(
-                str(update.effective_user.id),
-                update.effective_user.username,
-                steam_id,
-                summary["personaname"],
-                {"summary": summary, "games": games}
+
+        user_input = args[1]
+        steam_id = user_input
+
+        # اگه Vanity URL باشه، تبدیلش می‌کنیم به steamid واقعی
+        if not steam_id.isdigit():
+            steam_id = self.steam.resolve_vanity_url(user_input)
+            if not steam_id:
+                self.bot.reply_to(message, "😕 نتونستم SteamID رو پیدا کنم. لطفاً بررسی کن درست باشه.")
+                return
+
+        profile = self.steam.get_player_summary(steam_id)
+        games = self.steam.get_owned_games(steam_id)
+        total_games = len(games)
+
+        if profile:
+            display_name = profile.get("personaname", "نامشخص")
+            avatar_url = profile.get("avatarfull", "")
+            last_seen = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+
+            # ذخیره در دیتابیس
+            save_user_to_db(
+                telegram_id=message.from_user.id,
+                steam_id=steam_id,
+                display_name=display_name,
+                avatar_url=avatar_url,
+                total_games=total_games,
+                last_updated=last_seen
             )
+
+            # ساخت کارت گرافیکی
+            generate_profile_card(
+                display_name=display_name,
+                avatar_url=avatar_url,
+                total_games=total_games,
+                last_seen=last_seen
+            )
+
+            self.bot.reply_to(
+                message,
+                f"🧑‍🚀 نام: {display_name}\n🎮 تعداد بازی‌ها: {total_games}\n✅ اطلاعات ذخیره شد."
+            )
+        else:
+            self.bot.reply_to(message, "😐 پروفایلی با این SteamID پیدا نکردم.")
+
+    def run(self):
+        self.bot.infinity_polling()
             
             # انتخاب یک لقب تصادفی
             random_nickname = random.choice(self.nicknames)
@@ -184,24 +231,24 @@ async def admin_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(response)
     
-    async def online_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def online_users(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """نمایش کاربران آنلاین در گروه"""
         if update.effective_chat.type not in ["group", "supergroup"]:
             await update.message.reply_text("این دستور فقط در گروه‌ها قابل استفاده است!")
             return
         
-        # دریافت کاربران اخیراً فعال
         recent_users = self.db.get_recent_users(limit=20)
         online_list = []
-        
+
         for user in recent_users:
             steam_id = user[1]
             try:
                 summary = self.steam_api.get_player_summary(steam_id)
-                if summary.get('personastate', 0) > 0:  # آنلاین است
+                if summary.get('personastate', 0) > 0:
                     game = summary.get('gameextrainfo', 'بدون بازی')
                     online_list.append(f"👤 {user[0]} - 🎮 {game}")
-            except:
+            except Exception as e:
+                logging.warning(f"خطا در بررسی وضعیت کاربر {steam_id}: {e}")
                 continue
         
         if not online_list:
@@ -210,6 +257,7 @@ async def admin_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
             response = "🎮 کاربران آنلاین گروه:\n\n" + "\n".join(online_list)
         
         await update.message.reply_text(response)
+
 if __name__ == "__main__":
     steam = SteamAPI()
     db = Database()
