@@ -98,6 +98,7 @@ class SteamBot:
                 response = "🎮 ۵ بازی پرکاربرد شما:\n\n" + "\n".join(
                     f"{i+1}. {g['name']} - {round(g['playtime_forever']/60)} ساعت"
                     for i, g in enumerate(top_games)
+                )
             
             await context.bot.send_message(
                 chat_id=query.message.chat_id,
