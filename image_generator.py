@@ -10,8 +10,8 @@ def generate_profile_card(display_name, avatar_url, total_games, last_seen, file
 
     # فونت‌ها
     try:
-        font_title = ImageFont.truetype("arial.ttf", 32)
-        font_text = ImageFont.truetype("arial.ttf", 24)
+        font_title = ImageFont.truetype("lato.ttf", 32)
+        font_text = ImageFont.truetype("lato.ttf", 24)
     except:
         font_title = font_text = ImageFont.load_default()
 
