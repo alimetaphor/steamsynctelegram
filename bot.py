@@ -10,7 +10,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, Callb
 from steam_api import SteamAPI
 from db import Database
 from imagegen import generate_profile_card
-from db import save_user_to_db
+from db import save_user_data
 from imagegen import generate_profile_card
 
 
@@ -72,7 +72,7 @@ class SteamBot:
         last_seen = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
         # ذخیره در دیتابیس
-        save_user_to_db(
+        save_user_data(
             telegram_id=update.message.from_user.id,
             steam_id=steam_id,
             display_name=display_name,
