@@ -92,8 +92,8 @@ class SteamBot:
                 reverse=True
             )[:5]
 
-            if not top_games:
-    await query.edit_message_text("هنوز بازی‌ای ثبت نشده!")
+        if not top_games:
+    await query.edit_message_text("""هنوز بازی‌ای ثبت نشده!""")
     return
 
 try:
