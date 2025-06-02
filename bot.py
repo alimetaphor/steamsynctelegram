@@ -11,6 +11,8 @@ from steam_api import SteamAPI
 from db import Database
 from utils.imagegen import generate_profile_card
 from database import save_user_to_db
+from imagegen import generate_profile_card
+
 
 load_dotenv()
 
