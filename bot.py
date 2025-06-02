@@ -3,14 +3,10 @@ import logging
 import random
 from datetime import datetime
 from dotenv import load_dotenv
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
-
 from steam_api import SteamAPI
 from db import Database
-from imagegen import generate_profile_card
-from db import save_user_data
 from imagegen import generate_profile_card
 
 
@@ -71,8 +67,9 @@ class SteamBot:
         avatar_url = profile.get("avatarfull", "")
         last_seen = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
-        # ذخیره در دیتابیس
-        save_user_data(
+        #ذخیره در دیتابیس
+        db = Database()
+        db.save_user_data(
             telegram_id=update.message.from_user.id,
             steam_id=steam_id,
             display_name=display_name,
