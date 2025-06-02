@@ -211,7 +211,7 @@ async def admin_stats(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await update.message.reply_text(response)
 if __name__ == "__main__":
-    steam = SteamAPI(STEAM_API_KEY)
+    steam = SteamAPI()
     db = Database()
 
     # ۱. گرفتن اطلاعات پروفایل
