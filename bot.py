@@ -89,29 +89,27 @@ class SteamBot:
     
         if data.startswith("games_"):
             try:
-                games_data = self.steam_api.get_owned_games(steam_id)
-                games = games_data.get("response", {}).get("games", [])
-
+                games = self.steam_api.get_owned_games(steam_id)
                 top_games = sorted(
                     [g for g in games if g.get("playtime_forever", 0) > 0],
                     key=lambda g: g["playtime_forever"],
                     reverse=True
                 )[:5]
-
+    
                 if not top_games:
-                    await query.edit_message_caption(caption="هیچ بازی‌ای با زمان بازی ثبت‌شده پیدا نشد.")
+                    # تغییر به edit_message_caption
+                    await query.edit_message_caption(caption="هنوز بازی‌ای ثبت نشده!")
                     return
-
-                msg = "🎮 پرپلی‌ترین‌ بازی‌هات:\n" + "\n".join(
+    
+                msg = "پرپلی‌ترین‌ بازی‌هات:\n" + "\n".join(
                     f"{i+1}. {g.get('name', 'نامشخص')} - {g.get('playtime_forever', 0)//60} ساعت"
-                    for i, g in enumerate(top_games)
+                    for i, g in enumerate(top_games[:10])
                 )
-
+                # تغییر به edit_message_caption
                 await query.edit_message_caption(caption=msg)
-
             except Exception as e:
-                await query.edit_message_caption(caption=f"⚠️ خطا در پردازش بازی‌ها:\n{str(e)}")
-
+                # تغییر به edit_message_caption
+                await query.edit_message_caption(caption=f"خطا در پردازش بازی‌ها: {str(e)}")
     
         elif data.startswith("stats_"):
             try:
