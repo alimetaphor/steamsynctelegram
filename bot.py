@@ -13,6 +13,7 @@ from imagegen import generate_profile_card
 from dotenv import load_dotenv
 import random
 from datetime import datetime
+from steam_deals import fetch_discounted_games
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -340,6 +341,10 @@ class SteamBot:
     # ---------------------------------------
     # /// تسک دوره‌ای ارسال تخفیف‌ها (فعلاً mock)
     async def post_mock_deals(self):
+        games = fetch_discounted_games(limit=10)
+        text = "🔥 بازی‌های دارای بیشترین تخفیف:\n\n"
+        for i, g in enumerate(games, 1):
+            text += f"{i}. {g['title']} {g['discount']} ➡️ {g['final_price']} (قبل: {g['original_price']})\n{g['link']}\n\n" 
         await asyncio.sleep(10)  # صبر اولیه قبل از استارت پریود
         while True:
             targets = self.db.get_post_targets_by_purpose("deals")

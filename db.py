@@ -55,13 +55,16 @@ class Database:
     def save_user_data(self, telegram_id, username, steam_id, display_name, last_data):
         cursor = self.conn.cursor()
         cursor.execute("""
-            INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO users (
+                telegram_id, username, steam_id, display_name, last_seen, last_fetched_data
+            ) VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT(telegram_id) DO UPDATE SET
                 steam_id=excluded.steam_id,
                 display_name=excluded.display_name,
                 last_seen=excluded.last_seen,
                 last_fetched_data=excluded.last_fetched_data
         """, (telegram_id, username, steam_id, display_name, datetime.utcnow(), json.dumps(last_data)))
+
         self.conn.commit()
 
     def get_user_by_username(self, username):
