@@ -7,8 +7,8 @@ from telegram.ext import (
 )
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from steam_api_rewritten import SteamAPI
-from db_rewritten import Database
+from steam_api import SteamAPI
+from db import Database
 from imagegen import generate_profile_card
 from dotenv import load_dotenv
 import random
@@ -24,7 +24,7 @@ class SteamBot:
         self.db = Database()
         self.steam_api = SteamAPI(os.getenv("STEAM_API_KEY"))
         self.bot = app.bot
-        self.ADMINS = [123456789]  # آیدی ادمین‌ها
+        self.ADMINS = [40746772]  # آیدی ادمین‌ها
         self.nicknames = [
             "سلطان گیم", "افسانه بی‌وقفه", "جنگجوی استیم", 
             "گیمر حرفه‌ای", "ستاره بازی", "جادوگر دیجیتال",
