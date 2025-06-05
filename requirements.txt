@@ -3,5 +3,4 @@ requests==2.31.0
 python-dotenv==1.0.0
 nest_asyncio
 Pillow
-sqlite3 steamsync_users.db < steamsync_schema.sql
 requests
