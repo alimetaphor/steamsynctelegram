@@ -25,7 +25,7 @@ class SteamBot:
         self.steam_api = SteamAPI(os.getenv("STEAM_API_KEY"))
         self.bot = app.bot
         # لیست adminها (در صورت نیاز)
-        self.ADMINS = [123456789]
+        self.ADMINS = [40746772]
         self.nicknames = [
             "سلطان گیم", "افسانه بی‌وقفه", "جنگجوی استیم",
             "گیمر حرفه‌ای", "ستاره بازی", "جادوگر دیجیتال",
