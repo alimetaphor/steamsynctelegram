@@ -1,6 +1,5 @@
 python-telegram-bot==20.3
 requests==2.31.0
 python-dotenv==1.0.0
+pillow
 nest_asyncio
-Pillow
-requests
